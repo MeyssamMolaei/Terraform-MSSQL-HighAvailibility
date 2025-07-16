@@ -1,3 +1,13 @@
+resource "docker_volume" "mssql_server_shared" {
+  name = "mssql-server-shared"
+}
+
+resource "docker_volume" "mssql_server_backup" {
+  name = "mssql-server-backup"
+}
+
+
+
 resource "null_resource" "copy_script_haproxy" {
   triggers = {
     script_hash = filesha256("${path.module}/conf/haproxy.cfg")
