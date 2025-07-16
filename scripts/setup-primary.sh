@@ -43,6 +43,17 @@ CREATE CERTIFICATE ag_certificate WITH SUBJECT = 'ag_certificate';
 
 BACKUP CERTIFICATE ag_certificate TO FILE = '/var/opt/mssql/shared/ag_certificate.cert' WITH PRIVATE KEY ( FILE = '/var/opt/mssql/shared/ag_certificate.key', ENCRYPTION BY PASSWORD = 'YourStrongPassw0rd');
 GO
+BACKUP DATABASE [Sales] TO  DISK = N'/var/opt/mssql/data/Sales-2025716-13-34-32.bak' WITH NOFORMAT, NOINIT,  NAME = N'Sales-2025716-13-34-32', NOSKIP, REWIND, NOUNLOAD,  STATS = 10, CHECKSUM, CONTINUE_AFTER_ERROR
+GO
+declare @backupSetId as int
+GO
+select @backupSetId = position from msdb..backupset where database_name=N'Sales' and backup_set_id=(select max(backup_set_id) from msdb..backupset where database_name=N'Sales' )
+GO
+if @backupSetId is null begin raiserror(N'Verify failed. Backup information for database ''Sales'' not found.', 16, 1) end
+GO
+RESTORE VERIFYONLY FROM  DISK = N'/var/opt/mssql/data/Sales-2025716-13-34-32.bak' WITH  FILE = @backupSetId,  NOUNLOAD
+GO
+
 
 -- 4. Create an HADR endpoint on port 5022
 CREATE ENDPOINT [Hadr_endpoint]
@@ -96,6 +107,6 @@ GO
 "
 
 
-python3 -c "import socket, time; s=socket.socket(); s.bind(('0.0.0.0',1434)); s.listen(); print('Listening...'); time.sleep(10); s.close(); print('Done')"
+python3 -c "import socket, time; s=socket.socket(); s.bind(('0.0.0.0',1234)); s.listen(); print('Listening...'); time.sleep(10); s.close(); print('Done')"
 
 #v7
