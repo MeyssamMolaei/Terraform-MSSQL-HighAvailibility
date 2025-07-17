@@ -22,7 +22,8 @@ echo "Waiting for SQL Primary Server..."
 # while ! nc -z mssql_primary 1234; do
 #   sleep 1
 # done
-python3 -c "import socket, time; exec('while True:\n try: socket.create_connection((\"mssql_primary\", 1234), timeout=1); break\n except OSError: print(\".\", end=\"\", flush=True); time.sleep(1)')"
+python3 -c "import socket, time; exec('while True:\n try: socket.create_connection((\"mssql_primary\", 1234), timeout=1); break\n except OSError: print(\".\", end=\"\", flush=True); time.sleep(10)')"
+echo "Master SQL Server is ready."
 
 
 
@@ -39,12 +40,12 @@ echo "Slave SQL Server is ready."
 USE [master];
 GO
 
--- 1. Create login and user for AOAG
+-- 1. Create login and user for AG
 IF NOT EXISTS (SELECT * FROM sys.sql_logins WHERE name = 'ag_login')
 BEGIN
     CREATE LOGIN ag_login WITH PASSWORD = 'YourStrongPassw0rd';
 END
-CREATE USER aoag_user FOR LOGIN ag_login;
+CREATE USER ag_user FOR LOGIN ag_login;
 GO
 
 -- 2. Create master key and certificate from primary's backup

@@ -11,12 +11,12 @@
 chown -R mssql:mssql /var/opt/mssql/backup /var/opt/mssql/shared
 chmod -R 770 /var/opt/mssql/backup /var/opt/mssql/shared
 
-echo "Waiting for Primary SQL Server..."
+echo "Waiting for Master SQL Server..."
 until /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'YourStrongPassw0rd' -l 30 -d master -N -C -Q "SELECT 1" > /dev/null 2>&1
 do
   sleep 2
 done
-echo "Primary SQL Server is ready."
+echo "Master SQL Server is ready."
 
 # Create a test DB
 /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'YourStrongPassw0rd' -l 30 -d master -N -C -Q "
@@ -29,7 +29,7 @@ GO
 CREATE DATABASE Sales;
 GO
 
--- 3. Create logins and a certificate for the AOAG
+-- 3. Create logins and a certificate for the AG
 USE [master];
 GO
 
@@ -43,7 +43,7 @@ CREATE CERTIFICATE ag_certificate WITH SUBJECT = 'ag_certificate';
 
 BACKUP CERTIFICATE ag_certificate TO FILE = '/var/opt/mssql/shared/ag_certificate.cert' WITH PRIVATE KEY ( FILE = '/var/opt/mssql/shared/ag_certificate.key', ENCRYPTION BY PASSWORD = 'YourStrongPassw0rd');
 GO
-BACKUP DATABASE [Sales] TO  DISK = N'/var/opt/mssql/data/Sales-2025716-13-34-32.bak' WITH NOFORMAT, NOINIT,  NAME = N'Sales-2025716-13-34-32', NOSKIP, REWIND, NOUNLOAD,  STATS = 10, CHECKSUM, CONTINUE_AFTER_ERROR
+BACKUP DATABASE [Sales] TO  DISK = N'/var/opt/mssql/data/Sales.bak' WITH NOFORMAT, NOINIT,  NAME = N'Sales-2025716-13-34-32', NOSKIP, REWIND, NOUNLOAD,  STATS = 10, CHECKSUM, CONTINUE_AFTER_ERROR
 GO
 declare @backupSetId as int
 GO
@@ -51,7 +51,7 @@ select @backupSetId = position from msdb..backupset where database_name=N'Sales'
 GO
 if @backupSetId is null begin raiserror(N'Verify failed. Backup information for database ''Sales'' not found.', 16, 1) end
 GO
-RESTORE VERIFYONLY FROM  DISK = N'/var/opt/mssql/data/Sales-2025716-13-34-32.bak' WITH  FILE = @backupSetId,  NOUNLOAD
+RESTORE VERIFYONLY FROM  DISK = N'/var/opt/mssql/data/Sales.bak' WITH  FILE = @backupSetId,  NOUNLOAD
 GO
 
 
@@ -107,6 +107,7 @@ GO
 "
 
 
-python3 -c "import socket, time; s=socket.socket(); s.bind(('0.0.0.0',1234)); s.listen(); print('Listening...'); time.sleep(10); s.close(); print('Done')"
+python3 -c "import socket; s=socket.socket(); s.bind(('0.0.0.0',1234)); s.listen(); print('Listening...'); conn, addr = s.accept(); print(f'Connection from {addr}'); conn.close(); s.close(); print('Done')"
+
 
 #v7
